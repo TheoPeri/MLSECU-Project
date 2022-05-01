@@ -18,6 +18,15 @@ class GetData(object):
         self.df_anomaly_traffic = self._get_df("anomalies")
         self.df_rounded_traffic = self._get_df("data_base")
 
+    def get_flag_one_hot_encoding(self, df):
+        flags = ["U", "A", "P", "R", "S", "F"]
+
+        df.flag.replace("\.", "0", regex=True, inplace=True)
+        df.flag.replace("[^0]", "1", regex=True, inplace=True)
+
+        for i in range(len(flags)):
+            df[flags[i]] = df.flag.str[i]
+
     def _get_df(self, file_base):
         self._unzipper(file_base)
 
