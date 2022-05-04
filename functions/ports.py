@@ -9,7 +9,6 @@ def generate_port_type_columns(df):
     port_use.loc[port_use.UDP.isna() == False, "UDP"] = True
     port_use.loc[port_use.UDP.isna(), "UDP"] = False
     port_use.set_index('Port', inplace=True)
-    port_use
 
     ports_TCP_and_UDP = port_use[port_use.TCP & port_use.UDP].index.tolist()
     ports_TCP = port_use[port_use.TCP & (port_use.UDP == False)].index.tolist()

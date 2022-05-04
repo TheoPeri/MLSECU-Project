@@ -10,4 +10,4 @@ def generate_flag_columns(df):
     for i in range(len(flags)):
         df["flag_" + flags[i]] = df.flag.str[i]
 
-    df.drop(columns=["flag"])
+    df.drop(columns=["flag"], axis =1, inplace=True)
