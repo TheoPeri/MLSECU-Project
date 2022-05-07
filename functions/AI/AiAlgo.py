@@ -1,4 +1,7 @@
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 
 
 class AiAlgo(object):
@@ -57,6 +60,19 @@ class AiAlgo(object):
                     validation=validation_score * 100
                 )
             )
+
+    def draw_feature_importance(self):
+        feature_imp = pd.Series(
+            self.clf.feature_importances_, index=self.X.columns.values
+        ).sort_values(ascending=False)
+
+        plt.figure(figsize=(10, 10))
+        sns.barplot(x=feature_imp, y=feature_imp.index)
+        plt.xlabel("Feature Importance Score")
+        plt.ylabel("Features")
+        plt.title("Visualizing Important Features")
+        plt.legend()
+        plt.show()
 
     def _get_X(self):
         return self.df.copy().drop("anomaly", axis=1)
