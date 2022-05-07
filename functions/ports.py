@@ -38,5 +38,23 @@ def generate_port_type_columns(df):
     df.loc[df["port_s"].isin(ports_UDP), "port_s_UDP"] = 1
     df.loc[df["port_s"].isin(ports_not), "port_s_not_TCP_UDP"] = 1
     df.loc[df["port_s_TCP_UDP"] + df["port_s_TCP"] + df["port_s_UDP"] + df["port_s_not_TCP_UDP"] == 0, "port_s_unknown"] = 1
+
+def split_port(df):
+    df["port_s_system"] = -42
+    df["port_s_registered"] = -42
+    df["port_s_dynamic"] = -42
     
+    df.loc[df["port_s"] < 1024, "port_s_system"] = df.loc[df["port_s"] < 1024, "port_s"]
+    df.loc[(df["port_s"] >= 1024) & (df["port_s"] < 49152), "port_s_registered"] = df.loc[(df["port_s"] >= 1024) & (df["port_s"] < 49152), "port_s"] - 1024
+    df.loc[df["port_s"] >= 49152, "port_s_dynamic"] = df.loc[df["port_s"] >= 49152, "port_s"] - 49152
+    
+    df["port_d_system"] = -42
+    df["port_d_registered"] = -42
+    df["port_d_dynamic"] = -42
+    
+    df.loc[df["port_d"] < 1024, "port_d_system"] = df.loc[df["port_d"] < 1024, "port_d"]
+    df.loc[(df["port_d"] >= 1024) & (df["port_d"] < 49152), "port_d_registered"] = df.loc[(df["port_d"] >= 1024) & (df["port_d"] < 49152), "port_d"] - 1024
+    df.loc[df["port_d"] >= 49152, "port_d_dynamic"] = df.loc[df["port_d"] >= 49152, "port_d"] - 49152
+    
+def remove_port(df):
     df.drop(columns = ["port_d", "port_s"], axis =1, inplace=True)
