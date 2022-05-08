@@ -47,7 +47,7 @@ class AiAlgo(object):
         return X_train, X_test, X_valid, y_train, y_test, y_valid
 
     def fit(self, X_train, y_train):
-        return self.clf.fit(X_train, y_train, eval_set=self.X_valid)
+        return self.clf.fit(X_train, y_train)
 
     def score(self, X_data, y_data):
         return self.clf.score(X_data, y_data)
@@ -89,16 +89,6 @@ class AiAlgo(object):
     class Graphs:
         def __init__(self, outer):
             self.main = outer
-
-        def loss_curve(self):
-            results = self.main.clf.evals_result()
-            # plot learning curves
-            plt.plot(results["validation_0"]["logloss"], label="train")
-            plt.plot(results["validation_1"]["logloss"], label="test")
-            # show the legend
-            plt.legend()
-            # show the plot
-            plt.show()
 
         def feature_importance(self):
             feature_imp = pd.Series(
@@ -159,38 +149,6 @@ class AiAlgo(object):
             plt.ylabel("True label", fontsize=12)
 
             plt.title("Confusion Matrix for Random Forest Model")
-            plt.show()
-
-        def learning_curve(self):
-            history = self.main.clf.fit(
-                self.main.X_train,
-                self.main.y_train,
-                eval_set=[
-                    (self.main.X_train, self.main.y_train),
-                    (self.main.X_valid, self.main.y_valid),
-                ],
-            )
-
-            acc = history.history["accuracy"]
-            val_acc = history.history["val_accuracy"]
-
-            loss = history.history["loss"]
-            val_loss = history.history["val_loss"]
-
-            epochs_range = range(epochs)
-
-            plt.figure(figsize=(8, 8))
-            plt.subplot(1, 2, 1)
-            plt.plot(epochs_range, acc, label="Training Accuracy")
-            plt.plot(epochs_range, val_acc, label="Validation Accuracy")
-            plt.legend(loc="lower right")
-            plt.title("Training and Validation Accuracy")
-
-            plt.subplot(1, 2, 2)
-            plt.plot(epochs_range, loss, label="Training Loss")
-            plt.plot(epochs_range, val_loss, label="Validation Loss")
-            plt.legend(loc="upper right")
-            plt.title("Training and Validation Loss")
             plt.show()
 
         def model_accuracy_train_size(self):
