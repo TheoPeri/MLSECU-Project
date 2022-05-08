@@ -61,6 +61,43 @@ class AiAlgo(object):
 
         real_data_score = self.score(X, y)
 
+        real_data_predict = self.clf.predict(X)
+
+        compare = X.copy()
+        compare["predicted"] = real_data_predict.copy()
+        compare["anomaly"] = y.values
+
+        print(
+            "Percentage of anomaly in the dataset: {nb:.2f}%".format(
+                nb=(y[y == True].shape[0] / y.shape[0]) * 100
+            )
+        )
+        print(
+            "Percentage of correctly identified anomalies {pct:.2f}%".format(
+                pct=(
+                    (
+                        compare[
+                            (compare["anomaly"] == True) & (compare["predicted"] == 1)
+                        ].shape[0]
+                        / compare[(compare["anomaly"] == True)].shape[0]
+                    )
+                    * 100
+                )
+            )
+        )
+        print(
+            "Percentage of correctly identified normal traffic {pct:.2f}%".format(
+                pct=(
+                    (
+                        compare[
+                            (compare["anomaly"] == False) & (compare["predicted"] == 0)
+                        ].shape[0]
+                        / compare[(compare["anomaly"] == False)].shape[0]
+                    )
+                    * 100
+                )
+            )
+        )
         print("Real Data Score : {real:.2f}%".format(real=real_data_score * 100))
 
     def fit_and_score(self, validation=False):
