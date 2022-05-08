@@ -52,6 +52,17 @@ class AiAlgo(object):
     def score(self, X_data, y_data):
         return self.clf.score(X_data, y_data)
 
+    def score_real(self, df):
+        flag_cols = ["flag_U", "flag_A", "flag_P", "flag_R", "flag_S", "flag_F"]
+        for col in flag_cols:
+            df = df.astype({col: "int64"}, errors="raise")
+
+        X, y = self._get_real_X(df), self._get_real_y(df)
+
+        real_data_score = self.score(X, y)
+
+        print("Real Data Score : {real:.2f}%".format(real=real_data_score * 100))
+
     def fit_and_score(self, validation=False):
         evalset = [(self.X_train, self.y_train), (self.X_test, self.y_test)]
         print(
@@ -79,6 +90,12 @@ class AiAlgo(object):
             )
 
         self._renewGraphs()
+
+    def _get_real_X(self, d):
+        return d.copy().drop("anomaly", axis=1)
+
+    def _get_real_y(self, d):
+        return d.anomaly
 
     def _get_X(self):
         return self.df.copy().drop("anomaly", axis=1)
