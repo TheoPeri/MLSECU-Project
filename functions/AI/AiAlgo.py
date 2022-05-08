@@ -1,7 +1,11 @@
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import learning_curve
+from sklearn.model_selection import validation_curve
+from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+import numpy as np
 
 
 class AiAlgo(object):
@@ -22,6 +26,11 @@ class AiAlgo(object):
             self.y_valid,
         ) = self.get_sets()
 
+        self.graphs = self._renewGraphs()
+
+    def _renewGraphs(self):
+        self.graphs = AiAlgo.Graphs(self)
+
     def get_sets(self):
         train_ratio = 0.70
         test_ratio = 0.20
@@ -38,14 +47,22 @@ class AiAlgo(object):
         return X_train, X_test, X_valid, y_train, y_test, y_valid
 
     def fit(self, X_train, y_train):
-        return self.clf.fit(X_train, y_train)
+        return self.clf.fit(X_train, y_train, eval_set=self.X_valid)
 
     def score(self, X_data, y_data):
         return self.clf.score(X_data, y_data)
 
     def fit_and_score(self, validation=False):
-
-        print(self.fit(self.X_train, self.y_train))
+        evalset = [(self.X_train, self.y_train), (self.X_test, self.y_test)]
+        print(
+            self.clf.fit(
+                self.X_train,
+                self.y_train,
+                # eval_metric="logloss",
+                # eval_set=evalset
+                # self.X_train, self.y_train, eval_metric="logloss", eval_set=evalset
+            )
+        )
 
         train_score = self.score(self.X_train, self.y_train)
         test_score = self.score(self.X_test, self.y_test)
@@ -61,21 +78,182 @@ class AiAlgo(object):
                 )
             )
 
-    def draw_feature_importance(self):
-        feature_imp = pd.Series(
-            self.clf.feature_importances_, index=self.X.columns.values
-        ).sort_values(ascending=False)
-
-        plt.figure(figsize=(10, 10))
-        sns.barplot(x=feature_imp, y=feature_imp.index)
-        plt.xlabel("Feature Importance Score")
-        plt.ylabel("Features")
-        plt.title("Visualizing Important Features")
-        plt.legend()
-        plt.show()
+        self._renewGraphs()
 
     def _get_X(self):
         return self.df.copy().drop("anomaly", axis=1)
 
     def _get_y(self):
         return self.df.anomaly
+
+    class Graphs:
+        def __init__(self, outer):
+            self.main = outer
+
+        def loss_curve(self):
+            results = self.main.clf.evals_result()
+            # plot learning curves
+            plt.plot(results["validation_0"]["logloss"], label="train")
+            plt.plot(results["validation_1"]["logloss"], label="test")
+            # show the legend
+            plt.legend()
+            # show the plot
+            plt.show()
+
+        def feature_importance(self):
+            feature_imp = pd.Series(
+                self.main.clf.feature_importances_, index=self.main.X.columns.values
+            ).sort_values(ascending=False)
+
+            plt.figure(figsize=(10, 6))
+            sns.barplot(x=feature_imp, y=feature_imp.index)
+
+            # plt.rc("xtick", labelsize=10)
+            # plt.rc("ytick", labelsize=6)
+
+            class_names = feature_imp.index
+
+            tick_marks_y = np.arange(len(class_names))  # + 0.5
+
+            plt.xticks(rotation=0, fontsize=10)
+            plt.yticks(tick_marks_y, class_names, rotation=25, fontsize=7)
+
+            plt.xlabel("Feature Importance Score", fontsize=12)
+            plt.ylabel("Features", fontsize=12)
+            plt.title("Visualizing Important Features")
+            # plt.legend()
+
+            plt.show()
+
+        def confusion_matrix(self):
+            # Get and reshape confusion matrix data
+            y_pred_test = self.main.clf.predict(self.main.X_test)
+
+            matrix = confusion_matrix(self.main.y_test, y_pred_test)
+            matrix = matrix.astype("float") / matrix.sum(axis=1)[:, np.newaxis]
+
+            # Build the plot
+            plt.figure(figsize=(8, 3))
+
+            plt.rc("xtick", labelsize=10)
+            plt.rc("ytick", labelsize=6)
+
+            sns.set(font_scale=1.4)
+            sns.heatmap(
+                matrix,
+                annot=True,
+                annot_kws={"size": 10},
+                cmap=plt.cm.Greens,
+                linewidths=0.2,
+            )
+
+            # Add labels to the plot
+            class_names = ["Normal", "Anomaly"]
+
+            tick_marks = np.arange(len(class_names)) + 0.5
+
+            plt.xticks(tick_marks, class_names, rotation=0, fontsize=10)
+            plt.yticks(tick_marks, class_names, rotation=90, fontsize=10)
+
+            plt.xlabel("Predicted label", fontsize=12)
+            plt.ylabel("True label", fontsize=12)
+
+            plt.title("Confusion Matrix for Random Forest Model")
+            plt.show()
+
+        def learning_curve(self):
+            history = self.main.clf.fit(
+                self.main.X_train,
+                self.main.y_train,
+                eval_set=[
+                    (self.main.X_train, self.main.y_train),
+                    (self.main.X_valid, self.main.y_valid),
+                ],
+            )
+
+            acc = history.history["accuracy"]
+            val_acc = history.history["val_accuracy"]
+
+            loss = history.history["loss"]
+            val_loss = history.history["val_loss"]
+
+            epochs_range = range(epochs)
+
+            plt.figure(figsize=(8, 8))
+            plt.subplot(1, 2, 1)
+            plt.plot(epochs_range, acc, label="Training Accuracy")
+            plt.plot(epochs_range, val_acc, label="Validation Accuracy")
+            plt.legend(loc="lower right")
+            plt.title("Training and Validation Accuracy")
+
+            plt.subplot(1, 2, 2)
+            plt.plot(epochs_range, loss, label="Training Loss")
+            plt.plot(epochs_range, val_loss, label="Validation Loss")
+            plt.legend(loc="upper right")
+            plt.title("Training and Validation Loss")
+            plt.show()
+
+        def model_accuracy_train_size(self):
+            estimator = self.main.clf
+            train_sizes, train_scores, test_scores = learning_curve(
+                estimator=estimator,
+                X=self.main.X,
+                y=self.main.y,
+                train_sizes=np.linspace(0.1, 1, 5),
+                cv=5,
+                n_jobs=-1,
+            )
+
+            train_mean = np.mean(train_scores, axis=1)
+            train_std = np.std(train_scores, axis=1)
+            test_mean = np.mean(test_scores, axis=1)
+            test_std = np.std(test_scores, axis=1)
+
+            plt.figure(figsize=(7, 7))
+            plt.plot(
+                train_sizes,
+                train_mean,
+                color="blue",
+                marker="o",
+                markersize=5,
+                label="Training accuracy",
+            )
+
+            plt.fill_between(
+                train_sizes,
+                train_mean + train_std,
+                train_mean - train_std,
+                alpha=0.15,
+                color="blue",
+            )
+
+            plt.plot(
+                train_sizes,
+                test_mean,
+                color="red",
+                linestyle="--",
+                marker="s",
+                markersize=5,
+                label="Validation accuracy",
+            )
+
+            plt.fill_between(
+                train_sizes,
+                test_mean + test_std,
+                test_mean - test_std,
+                alpha=0.15,
+                color="green",
+            )
+
+            plt.grid(visible=True)
+            plt.xlabel("Number of training examples", fontsize=14)
+            plt.ylabel("Model Accuracy", fontsize=14)
+
+            title = (
+                "Accuracy in relation to number of training examples for a "
+                + str(estimator).split("(")[0]
+                + " model"
+            )
+            plt.title(title, fontsize=18, y=1.03)
+            plt.legend(loc="best")
+            plt.show
