@@ -5,9 +5,9 @@ from functions.AI.AiAlgo import AiAlgo
 
 
 class randomForest(AiAlgo):
-    def __init__(self, df, n_estimators=1):
+    def __init__(self, df, max_depth=2):
         clf = RandomForestClassifier(
-            n_estimators=n_estimators,
+            max_depth=max_depth,
             random_state=0,
         )
         super().__init__(df, clf)
