@@ -65,15 +65,7 @@ class AiAlgo(object):
 
     def fit_and_score(self, validation=False):
         evalset = [(self.X_train, self.y_train), (self.X_test, self.y_test)]
-        print(
-            self.clf.fit(
-                self.X_train,
-                self.y_train,
-                # eval_metric="logloss",
-                # eval_set=evalset
-                # self.X_train, self.y_train, eval_metric="logloss", eval_set=evalset
-            )
-        )
+        print(self.clf.fit(self.X_train, self.y_train))
 
         train_score = self.score(self.X_train, self.y_train)
         test_score = self.score(self.X_test, self.y_test)
@@ -107,40 +99,55 @@ class AiAlgo(object):
         def __init__(self, outer):
             self.main = outer
 
-        def feature_importance(self):
+        def feature_importance(self, dwld=False):
+            estimator = self.main.clf
+
             feature_imp = pd.Series(
                 self.main.clf.feature_importances_, index=self.main.X.columns.values
             ).sort_values(ascending=False)
 
-            plt.figure(figsize=(10, 6))
-            sns.barplot(x=feature_imp, y=feature_imp.index)
+            if dwld:
+                plt.figure(figsize=(20, 12))
+            else:
+                plt.figure(figsize=(10, 6))
 
-            # plt.rc("xtick", labelsize=10)
-            # plt.rc("ytick", labelsize=6)
+            sns.barplot(x=feature_imp, y=feature_imp.index)
 
             class_names = feature_imp.index
 
-            tick_marks_y = np.arange(len(class_names))  # + 0.5
+            tick_marks_y = np.arange(len(class_names))
 
             plt.xticks(rotation=0, fontsize=10)
             plt.yticks(tick_marks_y, class_names, rotation=25, fontsize=7)
 
             plt.xlabel("Feature Importance Score", fontsize=12)
             plt.ylabel("Features", fontsize=12)
-            plt.title("Visualizing Important Features")
-            # plt.legend()
+            plt.title(
+                "Visualizing Important Features for "
+                + str(estimator).split("(")[0]
+                + " model"
+            )
+
+            if dwld:
+                plt.savefig(
+                    str(estimator).split("(")[0] + "-featureImportance.svg",
+                    format="svg",
+                    dpi=1200,
+                )
 
             plt.show()
 
-        def confusion_matrix(self):
-            # Get and reshape confusion matrix data
+        def confusion_matrix(self, dwld=False):
+            estimator = self.main.clf
             y_pred_test = self.main.clf.predict(self.main.X_test)
 
             matrix = confusion_matrix(self.main.y_test, y_pred_test)
             matrix = matrix.astype("float") / matrix.sum(axis=1)[:, np.newaxis]
 
-            # Build the plot
-            plt.figure(figsize=(8, 3))
+            if dwld:
+                plt.figure(figsize=(16, 6))
+            else:
+                plt.figure(figsize=(8, 3))
 
             plt.rc("xtick", labelsize=10)
             plt.rc("ytick", labelsize=6)
@@ -154,7 +161,6 @@ class AiAlgo(object):
                 linewidths=0.2,
             )
 
-            # Add labels to the plot
             class_names = ["Normal", "Anomaly"]
 
             tick_marks = np.arange(len(class_names)) + 0.5
@@ -165,7 +171,14 @@ class AiAlgo(object):
             plt.xlabel("Predicted label", fontsize=12)
             plt.ylabel("True label", fontsize=12)
 
-            plt.title("Confusion Matrix for Random Forest Model")
+            plt.title("Confusion Matrix for " + str(estimator).split("(")[0] + " model")
+
+            if dwld:
+                plt.savefig(
+                    str(estimator).split("(")[0] + "-confusionMatrix.svg",
+                    format="svg",
+                    dpi=1200,
+                )
             plt.show()
 
         def model_accuracy_train_size(self):
